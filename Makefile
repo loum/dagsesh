@@ -1,34 +1,35 @@
 .SILENT:
 .DEFAULT_GOAL := help
 
+MAKESTER__INCLUDES := py docker versioning
+
 include makester/makefiles/makester.mk
-include makester/makefiles/docker.mk
-include makester/makefiles/python-venv.mk
-include makester/makefiles/versioning.mk
 
-GITVERSION_VERSION := 5.10.1-alpine.3.14-6.0
-GITVERSION_CONFIG := makester/sample/GitVersion.yml
+#
+# Makester overrides.
+#
+MAKESTER__VERSION_FILE := $(MAKESTER__PYTHON_PROJECT_ROOT)/VERSION
 
-# Add current Python virtual environment to path.
-export PATH := 3env/bin:$(PATH)
-export PYTHONPATH := src
+#
+# Local Makefile targets.
+#
+_venv-init: py-venv-clear py-venv-init
 
-# APP_ENV is used in setup.py.
-ifndef APP_ENV
-export APP_ENV := local
-else
-export APP_ENV := $(APP_ENV)
-endif
+# Build the local development environment.
+init-dev: _venv-init py-install-makester
+	MAKESTER__PIP_INSTALL_EXTRAS=dev $(MAKE) py-install-extras
 
-init: WHEEL := .wheelhouse
-init: clear-env makester-requirements
-	$(info ### Installing "$(MAKESTER__PROJECT_NAME)" and dependencies ...)
-	$(MAKE) pip-editable
+# Streamlined production packages.
+init: _venv-init
+	$(MAKE) py-install
+
+# Silence SQLAlchemy 2.0 compatibility warnings.
+export SQLALCHEMY_SILENCE_UBER_WARNING ?= 1
 
 TESTS := tests
 tests:
 	AIRFLOW__DAGSESH__PRIME_TEST_CONTEXT=true\
- $(PYTHON) -m pytest\
+ $(MAKESTER__PYTHON) -m pytest\
  --override-ini log_cli=true\
  --override-ini junit_family=xunit2\
  --log-cli-level=INFO -svv\
@@ -39,25 +40,9 @@ tests:
  --junitxml tests/junit.xml\
  $(TESTS)
 
-check-release-version:
-	$(info ### Checking MAKESTER__VERSION)
-	$(call check_defined, MAKESTER__VERSION)
-
-package: WHEEL = .wheelhouse
-package: APP_ENV = prod
-package: check-release-version release-version
-
-deps:
-	pipdeptree
-
-lint:
-	-@pylint $(MAKESTER__PROJECT_DIR)/src
-
-help: makester-help docker-help python-venv-help versioning-help
+help: makester-help
 	@echo "(Makefile)\n\
   init                 Build the local Python-based virtual environment\n\
-  deps                 Display PyPI package dependency tree\n\
-  lint                 Lint the code base\n\
   tests                Run code test suite\n"
 
 .PHONY: help tests
