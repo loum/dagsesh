@@ -50,6 +50,7 @@ coverage.xml
 
 # Local virtual environment
 [v23]env
+.venv
 
 # py.test
 .cache

@@ -1,23 +1,22 @@
-"""Shared fixture set.
+"""Shared fixture set."""
 
-"""
-from typing import Text, Union
 import os
 import pathlib
 import shutil
 import tempfile
+from typing import Union
 
-from logga import log
-from _pytest.config import ExitCode
-from _pytest.main import Session
-from _pytest.fixtures import SubRequest
 import pytest
+from _pytest.config import ExitCode
+from _pytest.fixtures import SubRequest
+from _pytest.main import Session
 
 import dagsesh.lazy
+from dagsesh.logging_config import log
 
 
 @pytest.fixture
-def working_dir(request: "SubRequest") -> Text:
+def working_dir(request: "SubRequest") -> str:
     """Temporary working directory."""
 
     def fin() -> None:
@@ -33,7 +32,7 @@ def working_dir(request: "SubRequest") -> Text:
 
 
 @pytest.fixture(scope="session")
-def dagbag():  # type: ignore
+def dagbag():
     """Set up the Airflow DagBag common to pytest.Session."""
     af_models = dagsesh.lazy.Loader("models", globals(), "airflow.models")
 
@@ -55,9 +54,9 @@ def pytest_sessionstart(session: Session) -> None:  # pylint: disable=unused-arg
     os.environ["AIRFLOW__CORE__DAGS_FOLDER"] = os.path.join(project_dir, "dags")
     os.environ["AIRFLOW__CORE__PLUGINS_FOLDER"] = os.path.join(project_dir, "plugins")
     os.environ["AIRFLOW__CORE__LOAD_EXAMPLES"] = "false"
-    os.environ[
-        "AIRFLOW__CORE__FERNET_KEY"
-    ] = "LFKF4PSrAOG-kbxOouoLj8Du2QCnsp9qw7G21-WPsLU="
+    os.environ["AIRFLOW__CORE__FERNET_KEY"] = (
+        "LFKF4PSrAOG-kbxOouoLj8Du2QCnsp9qw7G21-WPsLU="
+    )
     db_url = f"sqlite:///{airflow_home}/airflow.db;Version=3;Journal Mode=Off;"
     os.environ["AIRFLOW__DATABASE__LOAD_DEFAULT_CONNECTIONS"] = "false"
     os.environ["AIRFLOW__DATABASE__SQL_ALCHEMY_CONN"] = db_url
@@ -69,7 +68,7 @@ def pytest_sessionstart(session: Session) -> None:  # pylint: disable=unused-arg
     if os.environ.get("AIRFLOW__DAGSESH__PRIME_TEST_CONTEXT") == "true":
         log.info("AIRFLOW__DAGSESH__PRIME_TEST_CONTEXT is set")
         utils_db = dagsesh.lazy.Loader("utils_db", globals(), "airflow.utils.db")
-        utils_db.upgradedb()  # type: ignore
+        utils_db.upgradedb()
 
 
 def pytest_sessionfinish(  # pylint: disable=unused-argument

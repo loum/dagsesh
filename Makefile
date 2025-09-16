@@ -1,14 +1,21 @@
 .SILENT:
 .DEFAULT_GOAL := help
 
+#
+# Makester overrides.
+#
+MAKESTER__STANDALONE := true
 MAKESTER__INCLUDES := py docker versioning
+MAKESTER__VENV_HOME := $(PWD)/.venv
 
-include makester/makefiles/makester.mk
+include $(HOME)/.makester/makefiles/makester.mk
 
 #
 # Makester overrides.
 #
+MAKESTER__GITVERSION_CONFIG := GitVersion.yml
 MAKESTER__VERSION_FILE := $(MAKESTER__PYTHON_PROJECT_ROOT)/VERSION
+MAKESTER__GITVERSION_VERSION := 6.1.0-alpine.3.20-8.0
 
 #
 # Local Makefile targets.
@@ -16,7 +23,7 @@ MAKESTER__VERSION_FILE := $(MAKESTER__PYTHON_PROJECT_ROOT)/VERSION
 _venv-init: py-venv-clear py-venv-init
 
 # Build the local development environment.
-init-dev: _venv-init py-install-makester
+init-dev: _venv-init
 	MAKESTER__PIP_INSTALL_EXTRAS=dev $(MAKE) py-install-extras
 
 # Streamlined production packages.
@@ -26,23 +33,22 @@ init: _venv-init
 # Silence SQLAlchemy 2.0 compatibility warnings.
 export SQLALCHEMY_SILENCE_UBER_WARNING ?= 1
 
-TESTS := tests
+# Dagsesh test harness.
+#
+TESTS_TO_RUN := $(if $(TESTS),$(TESTS),tests)
+PRIME_TEST_CONTEXT ?= true
+ifneq (tests,$(TESTS_TO_RUN))
+COVERAGE := -no-cov
+endif
+
 tests:
-	AIRFLOW__DAGSESH__PRIME_TEST_CONTEXT=true\
- $(MAKESTER__PYTHON) -m pytest\
- --override-ini log_cli=true\
- --override-ini junit_family=xunit2\
- --log-cli-level=INFO -svv\
- --exitfirst\
- --cov-config tests/.coveragerc\
- --pythonwarnings ignore\
- --cov src\
- --junitxml tests/junit.xml\
- $(TESTS)
+	AIRFLOW__DAGSESH__PRIME_TEST_CONTEXT=$(PRIME_TEST_CONTEXT)\
+ $(MAKESTER__PYTHON) -m pytest $(TESTS_TO_RUN) $(COVERAGE)
 
 help: makester-help
-	@echo "(Makefile)\n\
-  init                 Build the local Python-based virtual environment\n\
-  tests                Run code test suite\n"
+	printf "\n(Makefile)\n"
+	$(call help-line,init,Build the local Python-based virtual environment)
+	$(call help-line,init-dev,Build the local Python-based virtual environment with dev tools)
+	$(call help-line,tests,Run code test suite)
 
 .PHONY: help tests
