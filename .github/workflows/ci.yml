@@ -17,7 +17,9 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       - name: Project Dagsesh vars
-        run: make vars
+        run: |
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/loum/makester/main/tools/install.sh)"
+          make vars
       - name: Project Dagsesh test suite
         run: |
           make init-dev

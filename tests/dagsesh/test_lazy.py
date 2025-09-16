@@ -1,6 +1,5 @@
-"""Unit test cases for `dagsesh.lazy`.
+"""Unit test cases for `dagsesh.lazy`."""
 
-"""
 from dagsesh import lazy
 
 
@@ -16,9 +15,9 @@ def test_lazy_init() -> None:
     _ospath = lazy.Loader(local_name, globals(), module_name)
 
     # I should get an airflow.models instance
-    msg = "Object is not an dagsesh.utils.lazy.Loader instance"
-    assert isinstance(_ospath, lazy.Loader), msg
+    assert isinstance(
+        _ospath, lazy.Loader
+    ), "Object is not an dagsesh.utils.lazy.Loader instance"
 
     # and after invocation I can use an os.path function
-    msg = "os.path.exists() did not return expected value"
-    assert _ospath.exists(__file__), msg  # type: ignore
+    assert _ospath.exists(__file__), "os.path.exists() did not return expected value"
